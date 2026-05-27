@@ -9,7 +9,15 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: "Cost Balancer",
+      theme: ThemeData(
+        primaryColor: Colors.green,
+        scaffoldBackgroundColor: Colors.grey,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.green,
+        )
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
