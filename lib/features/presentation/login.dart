@@ -1,3 +1,4 @@
+import 'package:cost_balancer_app/features/presentation/dashboard.dart';
 import 'package:cost_balancer_app/features/presentation/register.dart';
 import 'package:flutter/material.dart';
 
@@ -127,7 +128,12 @@ class LoginPage extends StatelessWidget {
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.green[900],
                                         ),
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context, 
+                                            MaterialPageRoute(builder: (context) => const DashboardPage())
+                                          );
+                                        },
                                         child: Text(
                                           "Login Here",
                                           style: TextStyle(

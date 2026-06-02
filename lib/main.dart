@@ -1,6 +1,5 @@
-import 'package:cost_balancer_app/features/presentation/register.dart';
+import 'package:cost_balancer_app/features/presentation/login.dart';
 import 'package:flutter/material.dart';
-import 'features/presentation/login.dart';
 
 void main() {
   runApp(const MainApp());
