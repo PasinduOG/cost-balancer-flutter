@@ -1,4 +1,6 @@
+import 'package:cost_balancer_app/features/presentation/register.dart';
 import 'package:flutter/material.dart';
+import 'features/presentation/login.dart';
 
 void main() {
   runApp(const MainApp());
@@ -11,9 +13,10 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Cost Balancer",
+      home: LoginPage(),
       theme: ThemeData(
+        fontFamily: 'Manrope',
         primaryColor: Colors.green,
-        scaffoldBackgroundColor: Colors.grey,
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.green,
         )
