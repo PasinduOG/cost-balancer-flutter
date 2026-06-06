@@ -1,6 +1,6 @@
 name: cost_balancer_app
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0+1
 
 environment:
@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
   google_fonts: ^8.1.0
 
 dev_dependencies:
@@ -22,6 +24,6 @@ flutter:
   fonts:
     - family: Manrope
       fonts:
-       - asset: assets/fonts/Manrope-Regular.ttf
-       - asset: assets/fonts/Manrope-Bold.ttf
-         weight: 700
+        - asset: assets/fonts/Manrope-Regular.ttf
+        - asset: assets/fonts/Manrope-Bold.ttf
+          weight: 700
