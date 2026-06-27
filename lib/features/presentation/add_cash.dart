@@ -11,7 +11,27 @@ class AddCashScreen extends StatefulWidget {
 class _AddCashScreenState extends State<AddCashScreen> {
   final _descriptionController = TextEditingController();
   final _amountController = TextEditingController();
+  
   bool _isLoading = false;
+  List<dynamic> _categories = [];
+  int? _selectedCategoryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    List<dynamic> categories = await ApiService.getCategories('INCOME');
+
+    setState(() {
+      _categories = categories;
+      if (_categories.isNotEmpty) {
+        _selectedCategoryId = _categories[0]['id'] ?? _categories[0]['category_id'] ?? _categories[0]['categoryId'];
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -21,21 +41,23 @@ class _AddCashScreenState extends State<AddCashScreen> {
   }
 
   void _submitData() async {
-    if (_descriptionController.text.isEmpty || _amountController.text.isEmpty) {
+    if (_descriptionController.text.isEmpty || _amountController.text.isEmpty || _selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all details.')),
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
     double amount = double.parse(_amountController.text);
-    
-    bool success = await ApiService.addTransaction(1, amount, _descriptionController.text);
+    bool success = await ApiService.addTransaction(_selectedCategoryId!, amount, _descriptionController.text);
 
     setState(() => _isLoading = false);
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cash added successfully!')),
+        const SnackBar(content: Text('Money added successfully!')),
       );
       _descriptionController.clear();
       _amountController.clear();
@@ -44,6 +66,58 @@ class _AddCashScreenState extends State<AddCashScreen> {
         const SnackBar(content: Text('Something went wrong, please try again.')),
       );
     }
+  }
+
+  void _showAddCategoryDialog() {
+    final TextEditingController categoryNameController = TextEditingController();
+    bool isAddingCategory = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Add New Income Category'),
+              content: TextField(
+                controller: categoryNameController,
+                decoration: const InputDecoration(hintText: 'E.g., Freelancing, Bonus'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
+                  onPressed: isAddingCategory ? null : () async {
+                    if (categoryNameController.text.isNotEmpty) {
+                      setDialogState(() => isAddingCategory = true);
+                      
+                      bool success = await ApiService.addCategory(categoryNameController.text, 'INCOME');
+                      
+                      setDialogState(() => isAddingCategory = false);
+                      
+                      if (success) {
+                        Navigator.of(ctx).pop();
+                        _loadCategories();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to add category.')),
+                        );
+                      }
+                    }
+                  },
+                  child: isAddingCategory 
+                      ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Save', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
   }
 
   @override
@@ -58,13 +132,65 @@ class _AddCashScreenState extends State<AddCashScreen> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 🔴 Dynamic Dropdown එක සහ Add Category බොත්තම
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: _categories.isEmpty 
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 15),
+                          child: Text('Loading categories...'),
+                        )
+                      : DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _selectedCategoryId,
+                            isExpanded: true,
+                            hint: const Text('Select Category'),
+                            items: _categories.map((cat) {
+                              return DropdownMenuItem<int>(
+                                value: cat['id'] ?? cat['category_id'] ?? cat['categoryId'],
+                                child: Text(cat['name'] ?? 'Unknown'),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCategoryId = value;
+                              });
+                            },
+                          ),
+                      ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.green[800],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    onPressed: _showAddCategoryDialog,
+                    tooltip: 'Add New Category',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            
             TextField(
               controller: _descriptionController,
               decoration: InputDecoration(
                 hintText: 'DESCRIPTION OF DEPOSIT',
                 filled: true,
-                fillColor: Colors.grey[200], // කොටුව පේන්න අළු පාටක් දැම්මා
+                fillColor: Colors.grey[200],
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
               ),
             ),

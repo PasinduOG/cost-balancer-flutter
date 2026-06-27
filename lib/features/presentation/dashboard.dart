@@ -32,209 +32,241 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'COST BALANCER',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.green[800],
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: Colors.green[800],
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Total Balance Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.green[700],
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'TOTAL BALANCE',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
-                    ),
-                    const SizedBox(height: 10),
-                    FutureBuilder<String>(
-                      future: _balanceFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator(
-                            color: Colors.white,
-                          );
-                        }
-                        String balance = snapshot.data ?? "0.00";
-                        return Text(
-                          '$balance LKR',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 2. Real History Data (Cards + List)
-              FutureBuilder<List<dynamic>>(
-                future: _historyFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  List<dynamic> history = snapshot.data ?? [];
-
-                  // Latest Expense එක හොයනවා
-                  var latestExpense = history.firstWhere(
-                    (tx) => tx['category_type'] == 'EXPENSE',
-                    orElse: () => null,
-                  );
-
-                  String latestExpenseAmount = latestExpense != null
-                      ? '${latestExpense['amount']} LKR'
-                      : '0.00 LKR';
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refreshData,
+          color: Colors.green[800],
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Total Balance Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.green[700],
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
                     children: [
-                      // Latest Expense & History Info Cards
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: Colors.green[700],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Latest Expense',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    latestExpenseAmount,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: Colors.green[700],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Total Records',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    '${history.length} Transactions',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Transactions List Title
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Income and Expenses',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'TOTAL BALANCE',
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
                       ),
                       const SizedBox(height: 10),
-
-                      // Real Transactions List
-                      history.isEmpty
-                          ? const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(20.0),
-                                child: Text('කිසිම ගනුදෙනුවක් තවම කරලා නෑ.'),
-                              ),
-                            )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: history.length,
-                              itemBuilder: (context, index) {
-                                var tx = history[index];
-                                bool isExpense =
-                                    tx['category_type'] == 'EXPENSE';
-                                return _buildTransactionCard(
-                                  tx['note'] ?? 'No Note',
-                                  tx['user_name'] ?? 'Unknown',
-                                  '${tx['amount']} LKR',
-                                  isExpense,
-                                );
-                              },
+                      FutureBuilder<String>(
+                        future: _balanceFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator(
+                              color: Colors.white,
+                            );
+                          }
+                          String balance = snapshot.data ?? "0.00";
+                          return Text(
+                            '$balance LKR',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
                             ),
+                          );
+                        },
+                      ),
                     ],
-                  );
-                },
-              ),
-            ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                FutureBuilder<List<dynamic>>(
+                  future: _historyFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    List<dynamic> history = snapshot.data ?? [];
+
+                    var latestExpense = history.firstWhere(
+                      (tx) => tx['category_type'] == 'EXPENSE',
+                      orElse: () => null,
+                    );
+
+                    String latestExpenseAmount = latestExpense != null
+                        ? '${latestExpense['amount']} LKR'
+                        : '0.00 LKR';
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Latest Expense & History Info Cards
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[700],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'Latest Expense',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      latestExpenseAmount,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[700],
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'Total Records',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      '${history.length} Transactions',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Income and Expenses',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        history.isEmpty
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: Text('No transaction records found'),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: history.length,
+                                itemBuilder: (context, index) {
+                                  var tx = history[index];
+                                  bool isExpense =
+                                      tx['category_type'] == 'EXPENSE';
+
+                                  String rawDate = tx['transaction_date'] ?? '';
+                                  String formattedDate = '';
+
+                                  String rawTime = tx['transaction_time'] ?? '';
+                                  String formattedTime = 'No Time';
+
+                                  if (rawDate.isNotEmpty) {
+                                    try {
+                                      DateTime dt = DateTime.parse(
+                                        rawDate,
+                                      ).toLocal();
+                                      formattedDate =
+                                          "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+                                    } catch (e) {
+                                      formattedDate = rawDate.contains('T')
+                                          ? rawDate.split('T')[0]
+                                          : rawDate;
+                                    }
+                                  }
+
+                                  if (rawTime.isNotEmpty &&
+                                      rawTime.contains(':')) {
+                                    try {
+                                      List<String> timeParts = rawTime.split(
+                                        ':',
+                                      );
+                                      int hour = int.parse(timeParts[0]);
+                                      int minute = int.parse(timeParts[1]);
+                                      String amPm = hour >= 12 ? 'PM' : 'AM';
+                                      hour = hour % 12;
+                                      if (hour == 0) hour = 12;
+
+                                      formattedTime =
+                                          "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $amPm";
+                                    } catch (e) {
+                                      formattedTime = rawTime;
+                                    }
+                                  }
+
+                                  return _buildTransactionCard(
+                                    tx['note'] ?? 'No Note',
+                                    tx['user_name'] ?? 'Unknown',
+                                    '${tx['amount']} LKR',
+                                    isExpense,
+                                    formattedDate,
+                                    formattedTime,
+                                  );
+                                },
+                              ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Transaction Card Widget Helper
   Widget _buildTransactionCard(
     String title,
     String user,
     String amount,
     bool isExpense,
+    String date,
+    String time,
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -253,6 +285,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 isExpense ? 'Expenser: $user' : 'Deposit by: $user',
                 style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Date: $date  •  Time: $time',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.black45,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
           ),
